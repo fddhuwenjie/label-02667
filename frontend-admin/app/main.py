@@ -30,11 +30,9 @@ class LoginWidget(QWidget):
         self.on_connect = on_connect
         self.config = load_config()
         self.db_service = DatabaseService()
-        self.setAutoFillBackground(True)
         self.init_ui()
 
     def init_ui(self):
-        self.setStyleSheet("background-color: #0a0a0b;")
         layout = QVBoxLayout()
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -124,8 +122,6 @@ class ManagerWidget(QWidget):
         self.on_disconnect = on_disconnect
         self.current_db = None
         self.current_table = None
-        self.setAutoFillBackground(True)
-        self.setStyleSheet("background-color: #0a0a0b;")
         self.init_ui()
         self.load_databases()
 
@@ -435,17 +431,23 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("SQL Manager")
         self.setMinimumSize(1200, 800)
+        # 强制深色背景
+        self.setStyleSheet("QMainWindow { background-color: #0a0a0b; }")
         self.statusBar = QStatusBar()
         self.setStatusBar(self.statusBar)
         self.show_login()
 
     def show_login(self):
         self.statusBar.showMessage("等待连接...")
-        self.setCentralWidget(LoginWidget(self.on_connect))
+        widget = LoginWidget(self.on_connect)
+        widget.setStyleSheet("QWidget { background-color: #0a0a0b; }")
+        self.setCentralWidget(widget)
 
     def on_connect(self, db_service: DatabaseService):
         self.statusBar.showMessage("● 已连接")
-        self.setCentralWidget(ManagerWidget(db_service, self.show_login))
+        widget = ManagerWidget(db_service, self.show_login)
+        widget.setStyleSheet("QWidget { background-color: #0a0a0b; }")
+        self.setCentralWidget(widget)
 
 
 def main():
