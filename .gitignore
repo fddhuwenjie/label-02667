@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# PyQt
+*.ui.bak
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment
+.env
+.env.local
+.env.*.local
+*.env
+
+# Docker
+*.log
+docker-compose.override.yml
+
+# Database
+*.sql.bak
+mysql_data/
+
+# Misc
+*.tmp
+*.temp
+.cache/
+coverage/
