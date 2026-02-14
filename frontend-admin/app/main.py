@@ -440,13 +440,11 @@ class MainWindow(QMainWindow):
     def show_login(self):
         self.statusBar.showMessage("等待连接...")
         widget = LoginWidget(self.on_connect)
-        widget.setStyleSheet("QWidget { background-color: #0a0a0b; }")
         self.setCentralWidget(widget)
 
     def on_connect(self, db_service: DatabaseService):
         self.statusBar.showMessage("● 已连接")
         widget = ManagerWidget(db_service, self.show_login)
-        widget.setStyleSheet("QWidget { background-color: #0a0a0b; }")
         self.setCentralWidget(widget)
 
 

@@ -6,9 +6,36 @@ QMainWindow {
 }
 
 QWidget {
-    background-color: transparent;
+    background-color: #0a0a0b;
     color: #e4e4e7;
     font-size: 13px;
+}
+
+QPushButton {
+    background-color: #8b5cf6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+QPushButton:hover {
+    background-color: #a78bfa;
+}
+
+QPushButton:pressed {
+    background-color: #7c3aed;
+}
+
+QPushButton#dangerBtn {
+    background-color: #7f1d1d;
+    border: 1px solid #991b1b;
+}
+
+QPushButton#dangerBtn:hover {
+    background-color: #991b1b;
 }
 
 QFrame#loginCard {
@@ -104,34 +131,7 @@ QTextEdit:focus {
     border-color: #8b5cf6;
 }
 
-QPushButton {
-    background-color: #8b5cf6;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 12px 24px;
-    font-size: 14px;
-    font-weight: 600;
-}
-
-QPushButton:hover {
-    background-color: #a78bfa;
-}
-
-QPushButton:pressed {
-    background-color: #7c3aed;
-}
-
-QPushButton#dangerBtn {
-    background-color: #7f1d1d;
-    border: 1px solid #991b1b;
-}
-
-QPushButton#dangerBtn:hover {
-    background-color: #991b1b;
-}
-
-/* 树形列表 - 完全移除蓝色 */
+/* 树形列表 */
 QTreeView, QTreeWidget {
     background-color: transparent;
     border: none;
