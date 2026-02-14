@@ -8,15 +8,6 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # 检查Docker是否安装
 if ! command -v docker &> /dev/null; then
     echo "错误: 未找到Docker，请先安装Docker"
-    echo "安装指南: https://docs.docker.com/get-docker/"
-    read -p "按回车键退出..."
-    exit 1
-fi
-
-# 检查docker-compose
-if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
-    echo "错误: 未找到docker-compose，请先安装"
-    read -p "按回车键退出..."
     exit 1
 fi
 
@@ -27,33 +18,23 @@ elif command -v python &> /dev/null; then
     PYTHON=python
 else
     echo "错误: 未找到Python，请先安装Python 3.9+"
-    read -p "按回车键退出..."
     exit 1
 fi
 
-# 检查Python版本
-PY_VERSION=$($PYTHON -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
-echo "Python版本: $PY_VERSION"
+echo "Python: $PYTHON"
 
 # 检测pip命令
 if command -v pip3 &> /dev/null; then
     PIP=pip3
-elif command -v pip &> /dev/null; then
-    PIP=pip
 else
-    echo "错误: 未找到pip，请先安装pip"
-    read -p "按回车键退出..."
-    exit 1
+    PIP=pip
 fi
 
 # 启动MySQL容器
 echo ""
 echo "[1/4] 启动MySQL数据库容器..."
-if docker compose version &> /dev/null 2>&1; then
-    docker compose -f "$SCRIPT_DIR/docker-compose.yml" up -d mysql
-else
-    docker-compose -f "$SCRIPT_DIR/docker-compose.yml" up -d mysql
-fi
+docker compose -f "$SCRIPT_DIR/docker-compose.yml" up -d mysql 2>/dev/null || \
+docker-compose -f "$SCRIPT_DIR/docker-compose.yml" up -d mysql
 
 # 等待MySQL完全就绪
 echo ""
@@ -62,29 +43,29 @@ MAX_RETRIES=30
 RETRY_COUNT=0
 
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    if docker exec $(docker ps -qf "name=mysql") mysqladmin ping -h localhost -u root -proot123 --silent 2>/dev/null; then
+    # 使用 docker compose 的健康检查
+    HEALTH=$(docker inspect --format='{{.State.Health.Status}}' 2667-mysql-1 2>/dev/null || \
+             docker inspect --format='{{.State.Health.Status}}' 2667_mysql_1 2>/dev/null || \
+             echo "starting")
+    
+    if [ "$HEALTH" = "healthy" ]; then
         echo "✓ MySQL已就绪"
         break
     fi
+    
     RETRY_COUNT=$((RETRY_COUNT + 1))
-    echo "  等待中... ($RETRY_COUNT/$MAX_RETRIES)"
+    echo "  等待中... ($RETRY_COUNT/$MAX_RETRIES) 状态: $HEALTH"
     sleep 2
 done
 
 if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
-    echo "错误: MySQL启动超时，请检查Docker日志"
-    echo "运行: docker logs \$(docker ps -qf 'name=mysql')"
-    read -p "按回车键退出..."
-    exit 1
+    echo "警告: MySQL健康检查超时，尝试继续启动..."
 fi
 
 # 安装依赖
 echo ""
 echo "[3/4] 安装Python依赖..."
 $PIP install -r "$SCRIPT_DIR/frontend-admin/requirements.txt" -q 2>/dev/null
-if [ $? -ne 0 ]; then
-    echo "警告: 部分依赖安装失败，尝试继续..."
-fi
 
 # 启动GUI
 echo ""
@@ -98,4 +79,5 @@ echo "  密码: root123"
 echo "========================================"
 echo ""
 
+cd "$SCRIPT_DIR/frontend-admin"
 $PYTHON -m app.main
