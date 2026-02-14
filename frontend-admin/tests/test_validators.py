@@ -50,10 +50,37 @@ class TestValidators(unittest.TestCase):
 
     def test_validate_sql_invalid(self):
         self.assertFalse(validate_sql("")[0])
-        # 危险操作警告
+
+    def test_validate_sql_dangerous_confirm(self):
+        """测试危险操作返回确认标记"""
+        # DROP DATABASE 需要确认
         ok, msg = validate_sql("DROP DATABASE test")
-        self.assertFalse(ok)
-        self.assertIn("危险", msg)
+        self.assertTrue(ok)  # 返回True但带确认标记
+        self.assertTrue(msg.startswith("CONFIRM:"))
+        
+        # TRUNCATE 需要确认
+        ok, msg = validate_sql("TRUNCATE TABLE users")
+        self.assertTrue(ok)
+        self.assertIn("CONFIRM:", msg)
+        
+        # DROP TABLE 需要确认
+        ok, msg = validate_sql("DROP TABLE users")
+        self.assertTrue(ok)
+        self.assertIn("CONFIRM:", msg)
+
+    def test_is_dangerous_sql(self):
+        """测试危险SQL检测"""
+        from app.validators import is_dangerous_sql
+        
+        # 普通消息
+        is_danger, op, desc = is_dangerous_sql("")
+        self.assertFalse(is_danger)
+        
+        # 确认消息
+        is_danger, op, desc = is_dangerous_sql("CONFIRM:DROP DATABASE|删除整个数据库")
+        self.assertTrue(is_danger)
+        self.assertEqual(op, "DROP DATABASE")
+        self.assertEqual(desc, "删除整个数据库")
 
     def test_validate_json_valid(self):
         self.assertTrue(validate_json('[{"a": 1}]')[0])

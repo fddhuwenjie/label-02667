@@ -4,22 +4,46 @@ Python桌面GUI应用，用于连接和管理MySQL数据库。
 
 ## How to Run
 
+### 环境要求
+
+| 依赖 | 最低版本 | 推荐版本 | 说明 |
+|------|----------|----------|------|
+| Python | 3.9+ | 3.11 | 需要支持PyQt6 |
+| pip | 21.0+ | 最新 | Python包管理器 |
+| Docker | 20.10+ | 最新 | 容器运行环境 |
+| Docker Compose | 2.0+ | 最新 | 容器编排工具 |
+
+### 系统支持
+
+| 操作系统 | 架构 | 状态 |
+|----------|------|------|
+| macOS | ARM64 (M1/M2) | ✅ 支持 |
+| macOS | x86_64 | ✅ 支持 |
+| Windows | x86_64 | ✅ 支持 |
+| Linux | x86_64 | ✅ 支持 |
+| Linux | ARM64 | ✅ 支持 |
+
+### 快速启动
+
 ```bash
-# 一键启动
+# 一键启动（推荐）
 ./start.sh
 ```
 
-或手动执行：
+### 手动启动
 
 ```bash
 # 1. 启动MySQL数据库
-docker-compose up -d
+docker-compose up -d mysql
 
-# 2. 安装Python依赖
+# 2. 等待MySQL就绪（约10-30秒）
+docker exec $(docker ps -qf "name=mysql") mysqladmin ping -h localhost -u root -proot123
+
+# 3. 安装Python依赖
 cd frontend-admin
 pip3 install -r requirements.txt
 
-# 3. 运行GUI应用
+# 4. 运行GUI应用
 python3 -m app.main
 ```
 
@@ -91,9 +115,39 @@ SELECT COUNT(*) AS total, AVG(price) AS avg_price FROM products;
 ## 技术栈
 
 - GUI框架：PyQt6
-- 数据库驱动：PyMySQL + cryptography
+- 数据库驱动：PyMySQL + cryptography（加密存储密码）
 - 数据库：MySQL 8.0
 - 容器化：Docker
+
+## 项目结构
+
+```
+├── docker-compose.yml      # Docker编排配置
+├── init.sql                # 数据库初始化脚本
+├── start.sh                # 一键启动脚本
+├── README.md               # 项目文档
+└── frontend-admin/         # 前端管理应用
+    ├── Dockerfile          # Docker构建文件
+    ├── requirements.txt    # Python依赖
+    ├── app/
+    │   ├── main.py         # 主程序入口
+    │   ├── database.py     # 数据库服务层
+    │   ├── config.py       # 配置管理（加密存储）
+    │   ├── validators.py   # 输入验证
+    │   ├── dialogs.py      # 自定义弹窗
+    │   ├── styles.py       # 界面样式
+    │   └── logger.py       # 日志模块
+    └── tests/              # 单元测试
+        ├── test_config.py
+        ├── test_validators.py
+        └── test_database.py
+```
+
+## 安全特性
+
+- 密码加密存储：使用 cryptography 库对数据库密码进行加密
+- 配置文件权限：配置文件设置为仅用户可读（chmod 600）
+- 危险操作确认：DROP/TRUNCATE 等操作需要二次确认
 
 ## 运行测试
 

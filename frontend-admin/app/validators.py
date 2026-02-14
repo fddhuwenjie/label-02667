@@ -34,16 +34,31 @@ def validate_user(user: str) -> tuple[bool, str]:
 
 
 def validate_sql(sql: str) -> tuple[bool, str]:
-    """验证SQL语句"""
+    """验证SQL语句，危险操作返回警告信息供二次确认"""
     if not sql or not sql.strip():
         return False, "SQL语句不能为空"
-    # 检查危险操作
     sql_upper = sql.strip().upper()
-    dangerous = ["DROP DATABASE", "DROP SCHEMA", "TRUNCATE"]
-    for d in dangerous:
-        if d in sql_upper:
-            return False, f"危险操作: {d}，请谨慎执行"
+    # 危险操作列表 - 返回警告而非直接拦截
+    dangerous_ops = {
+        "DROP DATABASE": "删除整个数据库",
+        "DROP SCHEMA": "删除整个数据库",
+        "TRUNCATE": "清空表数据",
+        "DROP TABLE": "删除表",
+        "DELETE FROM": "删除数据（无WHERE条件时会删除所有数据）"
+    }
+    for op, desc in dangerous_ops.items():
+        if op in sql_upper:
+            # 返回特殊标记，让调用方决定是否二次确认
+            return True, f"CONFIRM:{op}|{desc}"
     return True, ""
+
+
+def is_dangerous_sql(msg: str) -> tuple[bool, str, str]:
+    """检查是否是需要确认的危险SQL"""
+    if msg.startswith("CONFIRM:"):
+        parts = msg[8:].split("|")
+        return True, parts[0], parts[1] if len(parts) > 1 else ""
+    return False, "", ""
 
 
 def validate_json(json_str: str) -> tuple[bool, str]:
