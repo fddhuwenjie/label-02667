@@ -449,6 +449,21 @@ def main():
         log_info("启动应用")
         app = QApplication(sys.argv)
         app.setStyle("Fusion")
+        
+        # 设置深色调色板
+        from PyQt6.QtGui import QPalette, QColor
+        palette = QPalette()
+        palette.setColor(QPalette.ColorRole.Window, QColor("#0a0a0b"))
+        palette.setColor(QPalette.ColorRole.WindowText, QColor("#e4e4e7"))
+        palette.setColor(QPalette.ColorRole.Base, QColor("#18181b"))
+        palette.setColor(QPalette.ColorRole.AlternateBase, QColor("#1f1f23"))
+        palette.setColor(QPalette.ColorRole.Text, QColor("#e4e4e7"))
+        palette.setColor(QPalette.ColorRole.Button, QColor("#27272a"))
+        palette.setColor(QPalette.ColorRole.ButtonText, QColor("#e4e4e7"))
+        palette.setColor(QPalette.ColorRole.Highlight, QColor("#8b5cf6"))
+        palette.setColor(QPalette.ColorRole.HighlightedText, QColor("#ffffff"))
+        app.setPalette(palette)
+        
         app.setStyleSheet(DARK_THEME)
         window = MainWindow()
         window.show()
