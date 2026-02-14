@@ -22,6 +22,10 @@ QFrame#sidebar {
     border-right: 1px solid #27272a;
 }
 
+QFrame#mainContent {
+    background-color: #0a0a0b;
+}
+
 QLabel {
     color: #e4e4e7;
     background-color: transparent;
