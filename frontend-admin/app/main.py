@@ -129,8 +129,18 @@ class ManagerWidget(QWidget):
         self.on_disconnect = on_disconnect
         self.current_db = None
         self.current_table = None
+        self.conn_params = None  # 保存连接参数用于重连
         self.init_ui()
         self.load_databases()
+
+    def ensure_connection(self):
+        """确保数据库连接有效，必要时重连"""
+        try:
+            self.conn.ping(reconnect=True)
+            return True
+        except Exception as e:
+            log_error(f"连接检查失败: {e}")
+            return False
 
     def init_ui(self):
         layout = QHBoxLayout()
@@ -376,26 +386,40 @@ class ManagerWidget(QWidget):
 
     def load_databases(self):
         self.tree.clear()
-        with self.conn.cursor() as cursor:
-            cursor.execute("SHOW DATABASES")
-            for row in cursor.fetchall():
-                name = row["Database"]
-                item = QTreeWidgetItem([f"📁 {name}"])
-                item.setData(0, Qt.ItemDataRole.UserRole, {"type": "db", "name": name})
-                item.setChildIndicatorPolicy(QTreeWidgetItem.ChildIndicatorPolicy.ShowIndicator)
-                self.tree.addTopLevelItem(item)
+        if not self.ensure_connection():
+            show_error(self, "连接错误", "数据库连接已断开")
+            return
+        try:
+            with self.conn.cursor() as cursor:
+                cursor.execute("SHOW DATABASES")
+                for row in cursor.fetchall():
+                    name = row["Database"]
+                    item = QTreeWidgetItem([f"📁 {name}"])
+                    item.setData(0, Qt.ItemDataRole.UserRole, {"type": "db", "name": name})
+                    item.setChildIndicatorPolicy(QTreeWidgetItem.ChildIndicatorPolicy.ShowIndicator)
+                    self.tree.addTopLevelItem(item)
+        except Exception as e:
+            log_error(f"加载数据库列表失败: {e}")
+            show_error(self, "加载失败", str(e))
 
     def on_tree_expand(self, item):
         data = item.data(0, Qt.ItemDataRole.UserRole)
         if data and data["type"] == "db" and item.childCount() == 0:
-            self.conn.select_db(data["name"])
-            with self.conn.cursor() as cursor:
-                cursor.execute("SHOW TABLES")
-                for row in cursor.fetchall():
-                    tbl = list(row.values())[0]
-                    child = QTreeWidgetItem([f"  📄 {tbl}"])
-                    child.setData(0, Qt.ItemDataRole.UserRole, {"type": "tbl", "db": data["name"], "name": tbl})
-                    item.addChild(child)
+            if not self.ensure_connection():
+                show_error(self, "连接错误", "数据库连接已断开")
+                return
+            try:
+                self.conn.select_db(data["name"])
+                with self.conn.cursor() as cursor:
+                    cursor.execute("SHOW TABLES")
+                    for row in cursor.fetchall():
+                        tbl = list(row.values())[0]
+                        child = QTreeWidgetItem([f"  📄 {tbl}"])
+                        child.setData(0, Qt.ItemDataRole.UserRole, {"type": "tbl", "db": data["name"], "name": tbl})
+                        item.addChild(child)
+            except Exception as e:
+                log_error(f"加载表列表失败: {e}")
+                show_error(self, "加载失败", str(e))
 
     def on_tree_click(self, item):
         data = item.data(0, Qt.ItemDataRole.UserRole)
@@ -421,15 +445,22 @@ class ManagerWidget(QWidget):
             self.load_structure()
 
     def load_structure(self):
-        self.conn.select_db(self.current_db)
-        with self.conn.cursor() as cursor:
-            cursor.execute(f"DESCRIBE `{self.current_table}`")
-            rows = cursor.fetchall()
-        self.structure_table.setRowCount(len(rows))
-        for i, r in enumerate(rows):
-            for j, k in enumerate(["Field", "Type", "Null", "Key", "Default"]):
-                val = str(r.get(k) or "-")
-                self.structure_table.setItem(i, j, QTableWidgetItem(val))
+        if not self.ensure_connection():
+            show_error(self, "连接错误", "数据库连接已断开")
+            return
+        try:
+            self.conn.select_db(self.current_db)
+            with self.conn.cursor() as cursor:
+                cursor.execute(f"DESCRIBE `{self.current_table}`")
+                rows = cursor.fetchall()
+            self.structure_table.setRowCount(len(rows))
+            for i, r in enumerate(rows):
+                for j, k in enumerate(["Field", "Type", "Null", "Key", "Default"]):
+                    val = str(r.get(k) or "-")
+                    self.structure_table.setItem(i, j, QTableWidgetItem(val))
+        except Exception as e:
+            log_error(f"加载表结构失败: {e}")
+            show_error(self, "加载失败", str(e))
 
     def execute_query(self):
         if not self.current_db:
@@ -439,6 +470,9 @@ class ManagerWidget(QWidget):
         ok, msg = validate_sql(sql)
         if not ok:
             show_warning(self, "验证", msg)
+            return
+        if not self.ensure_connection():
+            show_error(self, "连接错误", "数据库连接已断开，请重新连接")
             return
         try:
             log_info(f"SQL: {sql[:80]}")
@@ -455,8 +489,10 @@ class ManagerWidget(QWidget):
                         for i, row in enumerate(rows):
                             for j, c in enumerate(cols):
                                 self.result_table.setItem(i, j, QTableWidgetItem(str(row[c] or "")))
+                        show_success(self, "查询成功", f"共 {len(rows)} 条记录")
                     else:
                         self.result_table.setRowCount(0)
+                        self.result_table.setColumnCount(0)
                         show_info(self, "查询结果", "没有找到数据")
                 else:
                     self.conn.commit()
@@ -474,6 +510,9 @@ class ManagerWidget(QWidget):
         if not ok:
             show_warning(self, "验证", msg)
             return
+        if not self.ensure_connection():
+            show_error(self, "连接错误", "数据库连接已断开")
+            return
         try:
             data = json.loads(txt)
             self.conn.select_db(self.current_db)
@@ -490,6 +529,9 @@ class ManagerWidget(QWidget):
     def export_data(self):
         if not self.current_table:
             show_warning(self, "提示", "请先选择要导出的表")
+            return
+        if not self.ensure_connection():
+            show_error(self, "连接错误", "数据库连接已断开")
             return
         try:
             self.conn.select_db(self.current_db)

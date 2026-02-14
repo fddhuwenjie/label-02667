@@ -27,8 +27,8 @@ python3 -m app.main
 
 | 服务 | 端口 | 说明 |
 |------|------|------|
-| mysql | 3306 | MySQL数据库 |
-| frontend-admin | 本地GUI | Python桌面应用 |
+| mysql | 3306 | MySQL 8.0 数据库 |
+| frontend-admin | 本地GUI | PyQt6 桌面应用 |
 
 ## 测试账号
 
@@ -40,8 +40,6 @@ python3 -m app.main
 | 密码 | root123 |
 | 测试数据库 | testdb |
 
-> ⚠️ **重要提示**：测试时请选择 `testdb` 数据库，不要选择 `mysql`、`sys` 等系统数据库！
-
 ### 测试数据
 
 `testdb` 数据库包含以下表：
@@ -49,32 +47,28 @@ python3 -m app.main
 | 表名 | 说明 | 数据量 |
 |------|------|--------|
 | users | 用户表 | 3条 |
-| products | 商品表 | 5条 |
+| products | 商品表 | 3条 |
 
 ### 示例查询语句
 
-> 执行查询前，请先在左侧点击展开 `testdb` 数据库
-
 ```sql
--- 1. 查询所有用户
+-- 查询所有用户
 SELECT * FROM users;
 
--- 2. 查询所有商品
+-- 查询所有商品
 SELECT * FROM products;
 
--- 3. 查询库存大于50的商品
+-- 查询库存大于50的商品
 SELECT * FROM products WHERE stock > 50;
 
--- 4. 按价格降序查询商品
+-- 按价格降序查询商品
 SELECT name, price FROM products ORDER BY price DESC;
 
--- 5. 统计商品总数和平均价格
+-- 统计商品总数和平均价格
 SELECT COUNT(*) AS total, AVG(price) AS avg_price FROM products;
 ```
 
 ### 导入数据示例
-
-> 导入前请先选择 `testdb` 数据库下的 `users` 表
 
 在"导入"标签页中粘贴以下JSON格式数据：
 
@@ -85,12 +79,7 @@ SELECT COUNT(*) AS total, AVG(price) AS avg_price FROM products;
 ]
 ```
 
-### 导出数据
-
-选择表后点击"导出CSV"按钮，选择保存路径即可导出。
-
 ## 题目内容
-利用python编写一个可视化窗口，目的是链接sql数据库，包含数据库登录界面，查看数据库内框架和表，导入数据，查询数据以及导出数据功能
 
 利用Python编写一个可视化窗口，目的是连接SQL数据库，包含：
 - 数据库登录界面
@@ -102,16 +91,9 @@ SELECT COUNT(*) AS total, AVG(price) AS avg_price FROM products;
 ## 技术栈
 
 - GUI框架：PyQt6
-- 数据库驱动：PyMySQL
+- 数据库驱动：PyMySQL + cryptography
 - 数据库：MySQL 8.0
-- 容器化：Docker (仅数据库)
-
-## 项目特性
-
-- 日志记录：操作日志保存在 `~/.sql_manager_logs/`
-- 配置管理：连接信息自动保存在 `~/.sql_manager_config.json`
-- 输入验证：主机、端口、SQL语句、JSON数据格式验证
-- 危险操作警告：DROP DATABASE 等操作会提示确认
+- 容器化：Docker
 
 ## 运行测试
 
