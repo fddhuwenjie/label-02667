@@ -1,5 +1,5 @@
 -- 初始化测试数据库
-CREATE DATABASE IF NOT EXISTS testdb;
+CREATE DATABASE IF NOT EXISTS testdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE testdb;
 
 CREATE TABLE IF NOT EXISTS users (

@@ -20,6 +20,7 @@ class DatabaseService:
                 port=port,
                 user=user.strip(),
                 password=password,
+                charset='utf8mb4',
                 cursorclass=pymysql.cursors.DictCursor,
                 connect_timeout=10,
                 read_timeout=30,
